@@ -330,17 +330,23 @@
 
     function startScanner() {
       var config = {
-        fps: 10,
-        qrbox: { width: 280, height: 120 },
+        fps: 15,
+        qrbox: { width: 300, height: 140 },
         formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8],
-        aspectRatio: 1.5,
-        showTorchButtonIfSupported: true
+        aspectRatio: 1.7,
+        showTorchButtonIfSupported: true,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        }
       };
 
       scanner = new Html5Qrcode('reader');
 
       scanner.start(
-        { facingMode: 'environment' },
+        {
+          facingMode: 'environment',
+          advanced: [{ focusMode: 'continuous' }]
+        },
         config,
         onScanSuccess,
         function() {}
@@ -349,6 +355,22 @@
         document.getElementById('btnStart').textContent = 'Stop Camera';
         document.getElementById('btnStart').classList.add('scanning');
         setStatus('Scanning... point at a barcode', 'active');
+
+        // Force continuous autofocus on the video track after stream starts
+        setTimeout(function() {
+          try {
+            var videoEl = document.querySelector('#reader video');
+            if (videoEl && videoEl.srcObject) {
+              var track = videoEl.srcObject.getVideoTracks()[0];
+              if (track && track.applyConstraints) {
+                track.applyConstraints({
+                  advanced: [{ focusMode: 'continuous' }]
+                }).catch(function() {});
+              }
+            }
+          } catch (e) {}
+        }, 800);
+
       }).catch(function(err) {
         setStatus('Camera error: ' + err, 'error');
       });
