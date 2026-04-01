@@ -13,7 +13,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       background: #0f0f0f;
       color: #f0f0f0;
       min-height: 100vh;
@@ -31,6 +31,7 @@
       top: 0;
       z-index: 100;
     }
+
     .header-title { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #fff; }
     .header-subtitle { font-size: 11px; color: #888; letter-spacing: 1px; text-transform: uppercase; }
     .scan-count { background: #2a2a2a; border-radius: 20px; padding: 6px 14px; font-size: 13px; color: #aaa; }
@@ -38,7 +39,6 @@
 
     .content { padding: 16px; max-width: 480px; margin: 0 auto; }
 
-    /* CONFIG BANNER */
     .config-banner {
       background: #2a1a00;
       border: 1px solid #ff9500;
@@ -51,6 +51,7 @@
     }
     .config-banner.visible { display: block; }
     .config-banner strong { display: block; margin-bottom: 6px; font-size: 14px; }
+
     .config-input {
       width: 100%;
       background: #1a1a1a;
@@ -63,6 +64,7 @@
       margin-top: 10px;
       outline: none;
     }
+
     .btn-save-config {
       margin-top: 10px;
       padding: 10px 20px;
@@ -76,7 +78,6 @@
       width: 100%;
     }
 
-    /* CAMERA */
     .camera-section {
       background: #000;
       border-radius: 16px;
@@ -84,16 +85,28 @@
       margin-bottom: 16px;
       border: 1px solid #2a2a2a;
       position: relative;
-      min-height: 200px;
+      min-height: 260px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    #cameraVideo {
+
+    #reader {
       width: 100%;
-      display: block;
+      min-height: 260px;
+    }
+
+    #reader video {
       border-radius: 16px;
     }
+
+    .camera-placeholder {
+      color: #444;
+      font-size: 14px;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
     .scan-guide {
       position: absolute;
       top: 50%;
@@ -102,9 +115,12 @@
       width: 75%;
       height: 80px;
       pointer-events: none;
+      display: none;
+      z-index: 5;
     }
+
     .scan-guide::before, .scan-guide::after {
-      content: '';
+      content: "";
       position: absolute;
       width: 20px;
       height: 20px;
@@ -112,10 +128,23 @@
       border-style: solid;
       opacity: 0.8;
     }
-    .scan-guide::before { top: 0; left: 0; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
-    .scan-guide::after  { top: 0; right: 0; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+
+    .scan-guide::before {
+      top: 0;
+      left: 0;
+      border-width: 2px 0 0 2px;
+      border-radius: 3px 0 0 0;
+    }
+
+    .scan-guide::after {
+      top: 0;
+      right: 0;
+      border-width: 2px 2px 0 0;
+      border-radius: 0 3px 0 0;
+    }
+
     .scan-guide-bottom::before, .scan-guide-bottom::after {
-      content: '';
+      content: "";
       position: absolute;
       width: 20px;
       height: 20px;
@@ -123,8 +152,21 @@
       border-style: solid;
       opacity: 0.8;
     }
-    .scan-guide-bottom::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-radius: 0 0 0 3px; }
-    .scan-guide-bottom::after  { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+
+    .scan-guide-bottom::before {
+      bottom: 0;
+      left: 0;
+      border-width: 0 0 2px 2px;
+      border-radius: 0 0 0 3px;
+    }
+
+    .scan-guide-bottom::after {
+      bottom: 0;
+      right: 0;
+      border-width: 0 2px 2px 0;
+      border-radius: 0 0 3px 0;
+    }
+
     .scan-line {
       position: absolute;
       left: 5%;
@@ -134,16 +176,11 @@
       animation: scanline 2s ease-in-out infinite;
       opacity: 0.6;
     }
+
     @keyframes scanline {
-      0%   { top: 15%; }
-      50%  { top: 75%; }
+      0% { top: 15%; }
+      50% { top: 75%; }
       100% { top: 15%; }
-    }
-    .camera-placeholder {
-      color: #444;
-      font-size: 14px;
-      text-align: center;
-      padding: 40px 20px;
     }
 
     .btn-start {
@@ -160,6 +197,7 @@
       margin-bottom: 16px;
       transition: opacity 0.2s;
     }
+
     .btn-start:active { opacity: 0.8; }
     .btn-start.scanning { background: #2a2a2a; color: #888; }
 
@@ -175,6 +213,7 @@
       border: 1px solid #2a2a2a;
       display: none;
     }
+
     .product-card.visible { display: block; }
     .product-card.found { border-color: #4CAF50; }
     .product-card.unknown { border-color: #f44336; }
@@ -193,45 +232,197 @@
     .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
     .qty-label { font-size: 13px; color: #888; white-space: nowrap; }
     .qty-controls { display: flex; align-items: center; background: #2a2a2a; border-radius: 10px; overflow: hidden; }
-    .qty-btn { width: 44px; height: 44px; background: transparent; border: none; color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .qty-btn:active { background: #3a3a3a; }
-    .qty-display { width: 48px; text-align: center; font-size: 20px; font-weight: 700; background: transparent; border: none; color: #fff; -webkit-appearance: none; }
+    .qty-btn {
+      width: 44px;
+      height: 44px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-    .notes-input { width: 100%; background: #2a2a2a; border: none; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; font-family: inherit; resize: none; margin-bottom: 16px; outline: none; }
+    .qty-btn:active { background: #3a3a3a; }
+
+    .qty-display {
+      width: 48px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      color: #fff;
+      -webkit-appearance: none;
+    }
+
+    .notes-input {
+      width: 100%;
+      background: #2a2a2a;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      margin-bottom: 16px;
+      outline: none;
+    }
+
     .notes-input::placeholder { color: #555; }
 
     .action-row { display: flex; gap: 10px; }
-    .btn-confirm { flex: 1; padding: 14px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+
+    .btn-confirm {
+      flex: 1;
+      padding: 14px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
     .btn-confirm:active { opacity: 0.8; }
-    .btn-discard { padding: 14px 20px; background: #2a2a2a; color: #888; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; }
+
+    .btn-discard {
+      padding: 14px 20px;
+      background: #2a2a2a;
+      color: #888;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      cursor: pointer;
+    }
 
     .form-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: 1px; }
     .form-ean { font-size: 12px; color: #666; margin-bottom: 16px; font-family: monospace; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .form-field { display: flex; flex-direction: column; gap: 6px; }
-    .form-field label { font-size: 10px; color: #666; letter-spacing: 1.5px; text-transform: uppercase; }
-    .form-field input { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; font-family: inherit; outline: none; -webkit-appearance: none; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-field label {
+      font-size: 10px;
+      color: #666;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .form-field input {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
     .form-field input:focus { border-color: #555; }
     .form-field.full { grid-column: span 2; }
-    .btn-save { width: 100%; padding: 14px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
-    .btn-skip-product { width: 100%; padding: 12px; background: transparent; color: #666; border: none; font-size: 14px; cursor: pointer; }
+
+    .btn-save {
+      width: 100%;
+      padding: 14px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .btn-skip-product {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: #666;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
     .log-section { margin-top: 8px; }
-    .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
     .log-title { font-size: 11px; letter-spacing: 2px; color: #555; text-transform: uppercase; }
     .btn-clear { font-size: 12px; color: #555; background: none; border: none; cursor: pointer; padding: 4px 8px; }
     .log-empty { text-align: center; color: #444; font-size: 14px; padding: 32px 0; }
-    .log-item { background: #1a1a1a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid #2a2a2a; display: flex; align-items: flex-start; gap: 12px; }
+
+    .log-item {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border: 1px solid #2a2a2a;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
     .log-item-info { flex: 1; min-width: 0; }
     .log-item-style { font-size: 15px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .log-item-detail { font-size: 12px; color: #666; margin-top: 2px; }
     .log-item-qty { background: #2a2a2a; border-radius: 8px; padding: 4px 12px; font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
 
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 14px; font-weight: 600; transition: transform 0.3s ease; z-index: 999; white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #fff;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.3s ease;
+      z-index: 999;
+      white-space: nowrap;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
     .toast.show { transform: translateX(-50%) translateY(0); }
     .toast.error { background: #f44336; color: #fff; }
 
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #444; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #444;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .bottom-spacer { height: 40px; }
@@ -239,7 +430,6 @@
 </head>
 
 <body>
-
   <div class="header">
     <div>
       <div class="header-title">FEDELI</div>
@@ -249,8 +439,6 @@
   </div>
 
   <div class="content">
-
-    <!-- SCRIPT URL CONFIG BANNER -->
     <div class="config-banner" id="configBanner">
       <strong>One-time setup required</strong>
       Paste your Google Apps Script deployment URL below.
@@ -258,11 +446,10 @@
       <button class="btn-save-config" onclick="saveScriptUrl()">Save & Continue</button>
     </div>
 
-    <!-- CAMERA -->
-    <div class="camera-section" id="cameraSection">
+    <div class="camera-section">
+      <div id="reader"></div>
       <div class="camera-placeholder" id="cameraPlaceholder">Camera inactive</div>
-      <video id="cameraVideo" autoplay playsinline muted style="display:none;"></video>
-      <div class="scan-guide" id="scanGuide" style="display:none;">
+      <div class="scan-guide" id="scanGuide">
         <div class="scan-guide-bottom"></div>
         <div class="scan-line"></div>
       </div>
@@ -271,7 +458,6 @@
     <button class="btn-start" id="btnStart" onclick="toggleScanner()">Start Scanning</button>
     <div class="status-bar" id="statusBar">Tap to activate camera</div>
 
-    <!-- PRODUCT CARD (found) -->
     <div class="product-card" id="productCard">
       <div class="card-label">Scanned Product</div>
       <div class="card-style" id="cardStyle"></div>
@@ -295,8 +481,7 @@
       </div>
     </div>
 
-    <!-- UNKNOWN BARCODE CARD -->
-    <div class="product-card unknown" id="unknownCard" style="display:none">
+    <div class="product-card unknown" id="unknownCard" style="display:none;">
       <div class="form-title">Unknown Barcode — Add to Products?</div>
       <div class="form-ean" id="unknownEan"></div>
       <div class="form-grid">
@@ -312,7 +497,6 @@
       <button class="btn-skip-product" onclick="skipNewProduct()">Skip — just log the barcode</button>
     </div>
 
-    <!-- SESSION LOG -->
     <div class="log-section">
       <div class="log-header">
         <span class="log-title">Session Log</span>
@@ -328,242 +512,241 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ============================================================
-    // CONFIG
-    // ============================================================
-    var SCRIPT_URL = localStorage.getItem('fedeli_script_url') || '';
+    var SCRIPT_URL = localStorage.getItem("fedeli_script_url") || "";
+    var html5QrCode = null;
+    var isScanning = false;
+    var currentProduct = null;
+    var pendingBarcode = null;
+    var sessionLog = [];
+    var lastScannedCode = "";
+    var lastScanTime = 0;
+    var scanCooldown = 2500;
 
     function init() {
-      if (!SCRIPT_URL) document.getElementById('configBanner').classList.add('visible');
+      if (!SCRIPT_URL) {
+        document.getElementById("configBanner").classList.add("visible");
+      }
       renderLog();
+      setReaderIdle();
     }
 
     function saveScriptUrl() {
-      var val = document.getElementById('scriptUrlInput').value.trim();
-      if (!val || !val.startsWith('https://script.google.com')) {
-        showToast('Paste a valid Apps Script URL', true);
+      var val = document.getElementById("scriptUrlInput").value.trim();
+      if (!val || !val.startsWith("https://script.google.com")) {
+        showToast("Paste a valid Apps Script URL", true);
         return;
       }
       SCRIPT_URL = val;
-      localStorage.setItem('fedeli_script_url', val);
-      document.getElementById('configBanner').classList.remove('visible');
-      showToast('URL saved');
+      localStorage.setItem("fedeli_script_url", val);
+      document.getElementById("configBanner").classList.remove("visible");
+      showToast("URL saved");
     }
 
-    // ============================================================
-    // API
-    // ============================================================
     function apiGet(params) {
-      var url = SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
-        return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-      }).join('&');
-      return fetch(url).then(function(r) { return r.json(); });
+      var url = SCRIPT_URL + "?" + Object.keys(params).map(function(k) {
+        return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+      }).join("&");
+
+      return fetch(url).then(function(r) {
+        return r.json();
+      });
     }
 
     function apiPost(data) {
       return fetch(SCRIPT_URL, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(data),
-        redirect: 'follow'
-      }).then(function(r) { return r.json(); });
+        redirect: "follow"
+      }).then(function(r) {
+        return r.json();
+      });
     }
 
-    // ============================================================
-    // STATE
-    // ============================================================
-    var isScanning     = false;
-    var videoStream    = null;
-    var decodeTimer    = null;
-    var zxingReader    = null;
-    var currentProduct = null;
-    var pendingBarcode = null;
-    var sessionLog     = [];
-    var lastScannedCode = '';
-    var lastScanTime   = 0;
-    var scanCooldown   = 2500;
-
-    // ============================================================
-    // SCANNER — getUserMedia for camera, ZXing for decoding
-    // ============================================================
     function toggleScanner() {
       if (!SCRIPT_URL) {
-        document.getElementById('configBanner').classList.add('visible');
-        showToast('Set your Apps Script URL first', true);
+        document.getElementById("configBanner").classList.add("visible");
+        showToast("Set your Apps Script URL first", true);
         return;
       }
       isScanning ? stopScanner() : startScanner();
     }
 
     function startScanner() {
-      navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width:  { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      }).then(function(stream) {
-        videoStream = stream;
-        var video = document.getElementById('cameraVideo');
-        video.srcObject = stream;
-        video.style.display = 'block';
-        document.getElementById('cameraPlaceholder').style.display = 'none';
-        document.getElementById('scanGuide').style.display = 'block';
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
 
-        video.play().then(function() {
-          isScanning = true;
-          document.getElementById('btnStart').textContent = 'Stop Camera';
-          document.getElementById('btnStart').classList.add('scanning');
-          setStatus('Hold barcode 15–20cm from camera', 'active');
+      hideCards();
+      setStatus("Starting camera...", "active");
 
-          zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
-          scheduleDetect();
-        });
-
+      html5QrCode.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: { width: 300, height: 140 },
+          aspectRatio: 1.7778,
+          formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
+        },
+        onScanSuccess,
+        function() {}
+      ).then(function() {
+        isScanning = true;
+        document.getElementById("btnStart").textContent = "Stop Camera";
+        document.getElementById("btnStart").classList.add("scanning");
+        document.getElementById("cameraPlaceholder").style.display = "none";
+        document.getElementById("scanGuide").style.display = "block";
+        setStatus("Hold barcode 15–20cm from camera", "active");
       }).catch(function(err) {
-        setStatus('Camera error: ' + err, 'error');
+        setStatus("Camera start failed: " + err, "error");
       });
     }
 
-    function scheduleDetect() {
-      if (!isScanning) return;
-      decodeTimer = setTimeout(function() {
-        var video = document.getElementById('cameraVideo');
-        if (!video || video.readyState < 2) { scheduleDetect(); return; }
-        zxingReader.decodeFromVideoElement(video)
-          .then(function(result) {
-            if (result) handleDetected(result.getText());
-            scheduleDetect();
-          })
-          .catch(function() {
-            scheduleDetect();
-          });
-      }, 200);
-    }
-
     function stopScanner() {
-      isScanning = false;
-      if (decodeTimer) { clearTimeout(decodeTimer); decodeTimer = null; }
-      if (videoStream) {
-        videoStream.getTracks().forEach(function(t) { t.stop(); });
-        videoStream = null;
+      if (!html5QrCode || !isScanning) {
+        isScanning = false;
+        setReaderIdle();
+        document.getElementById("btnStart").textContent = "Start Scanning";
+        document.getElementById("btnStart").classList.remove("scanning");
+        return Promise.resolve();
       }
-      var video = document.getElementById('cameraVideo');
-      video.srcObject = null;
-      video.style.display = 'none';
-      document.getElementById('cameraPlaceholder').style.display = 'block';
-      document.getElementById('scanGuide').style.display = 'none';
 
-      document.getElementById('btnStart').textContent = 'Start Scanning';
-      document.getElementById('btnStart').classList.remove('scanning');
-      setStatus('Camera stopped');
+      return html5QrCode.stop().then(function() {
+        isScanning = false;
+        document.getElementById("btnStart").textContent = "Start Scanning";
+        document.getElementById("btnStart").classList.remove("scanning");
+        document.getElementById("scanGuide").style.display = "none";
+        setStatus("Camera stopped");
+        setReaderIdle();
+      }).catch(function() {
+        isScanning = false;
+        document.getElementById("btnStart").textContent = "Start Scanning";
+        document.getElementById("btnStart").classList.remove("scanning");
+        document.getElementById("scanGuide").style.display = "none";
+        setReaderIdle();
+      });
     }
 
-    // ============================================================
-    // DETECTION
-    // ============================================================
-    function handleDetected(code) {
+    function setReaderIdle() {
+      var reader = document.getElementById("reader");
+      if (reader) {
+        reader.innerHTML = "";
+      }
+      document.getElementById("cameraPlaceholder").style.display = "block";
+      document.getElementById("scanGuide").style.display = "none";
+    }
+
+    function onScanSuccess(decodedText) {
       var now = Date.now();
-      if (code === lastScannedCode && (now - lastScanTime) < scanCooldown) return;
-      lastScannedCode = code;
+
+      if (decodedText === lastScannedCode && (now - lastScanTime) < scanCooldown) {
+        return;
+      }
+
+      lastScannedCode = decodedText;
       lastScanTime = now;
 
-      stopScanner();
-      hideCards();
-      setStatus('<span class="spinner"></span> Looking up ' + code + '...');
+      stopScanner().then(function() {
+        handleDetected(decodedText);
+      });
+    }
 
-      apiGet({ action: 'lookup', barcode: code })
-        .then(function(result) { handleLookupResult(result, code); })
-        .catch(function(err) { setStatus('Lookup error: ' + err, 'error'); });
+    function handleDetected(code) {
+      hideCards();
+      setStatus('<span class="spinner"></span> Looking up ' + code + "...");
+
+      apiGet({ action: "lookup", barcode: code })
+        .then(function(result) {
+          handleLookupResult(result, code);
+        })
+        .catch(function(err) {
+          setStatus("Lookup error: " + err, "error");
+        });
     }
 
     function handleLookupResult(result, barcode) {
-      if (result.found) {
+      if (result && result.found) {
         currentProduct = result;
         showProductCard(result);
-        setStatus('Product found');
+        setStatus("Product found", "active");
       } else {
         pendingBarcode = barcode;
         showUnknownCard(barcode);
-        setStatus('Unknown barcode — add product?', 'error');
+        setStatus("Unknown barcode — add product?", "error");
       }
     }
 
-    // ============================================================
-    // PRODUCT CARD
-    // ============================================================
     function showProductCard(p) {
-      var card = document.getElementById('productCard');
-      card.classList.add('visible', 'found');
-      document.getElementById('cardStyle').textContent = p.style || 'Unknown Style';
+      var card = document.getElementById("productCard");
+      card.classList.add("visible", "found");
+      document.getElementById("cardStyle").textContent = p.style || "Unknown Style";
 
-      var tags = '';
-      if (p.color)    tags += '<div class="tag"><strong>COLOR</strong>' + p.color + '</div>';
-      if (p.size)     tags += '<div class="tag"><strong>SIZE</strong>' + p.size + '</div>';
-      if (p.category) tags += '<div class="tag"><strong>TYPE</strong>' + p.category + '</div>';
-      if (p.season)   tags += '<div class="tag"><strong>SEASON</strong>' + p.season + '</div>';
-      document.getElementById('cardTags').innerHTML = tags;
+      var tags = "";
+      if (p.color) tags += '<div class="tag"><strong>COLOR</strong>' + escapeHtml(p.color) + "</div>";
+      if (p.size) tags += '<div class="tag"><strong>SIZE</strong>' + escapeHtml(p.size) + "</div>";
+      if (p.category) tags += '<div class="tag"><strong>TYPE</strong>' + escapeHtml(p.category) + "</div>";
+      if (p.season) tags += '<div class="tag"><strong>SEASON</strong>' + escapeHtml(p.season) + "</div>";
 
-      document.getElementById('cardWholesale').textContent = p.wholesale ? '$' + p.wholesale : '—';
-      document.getElementById('cardRetail').textContent    = p.retail    ? '$' + p.retail    : '—';
-      document.getElementById('qtyInput').value = 1;
-      document.getElementById('notesInput').value = '';
-      document.getElementById('unknownCard').style.display = 'none';
+      document.getElementById("cardTags").innerHTML = tags;
+      document.getElementById("cardWholesale").textContent = p.wholesale ? "$" + p.wholesale : "—";
+      document.getElementById("cardRetail").textContent = p.retail ? "$" + p.retail : "—";
+      document.getElementById("qtyInput").value = 1;
+      document.getElementById("notesInput").value = "";
+      document.getElementById("unknownCard").style.display = "none";
     }
 
     function showUnknownCard(barcode) {
-      document.getElementById('productCard').classList.remove('visible');
-      document.getElementById('unknownCard').style.display = 'block';
-      document.getElementById('unknownEan').textContent = 'EAN13: ' + barcode;
+      document.getElementById("productCard").classList.remove("visible");
+      document.getElementById("unknownCard").style.display = "block";
+      document.getElementById("unknownEan").textContent = "EAN13: " + barcode;
       clearNewProductForm();
     }
 
     function hideCards() {
-      document.getElementById('productCard').classList.remove('visible');
-      document.getElementById('unknownCard').style.display = 'none';
+      document.getElementById("productCard").classList.remove("visible");
+      document.getElementById("unknownCard").style.display = "none";
     }
 
     function changeQty(delta) {
-      var input = document.getElementById('qtyInput');
-      input.value = Math.max(1, (parseInt(input.value) || 1) + delta);
+      var input = document.getElementById("qtyInput");
+      input.value = Math.max(1, (parseInt(input.value, 10) || 1) + delta);
     }
 
-    // ============================================================
-    // CONFIRM / DISCARD
-    // ============================================================
     function confirmScan() {
       if (!currentProduct) return;
+
       var scanData = {
-        action:    'logScan',
-        ean13:     currentProduct.ean13,
-        style:     currentProduct.style,
-        color:     currentProduct.color,
-        size:      currentProduct.size,
-        category:  currentProduct.category,
+        action: "logScan",
+        ean13: currentProduct.ean13,
+        style: currentProduct.style,
+        color: currentProduct.color,
+        size: currentProduct.size,
+        category: currentProduct.category,
         wholesale: currentProduct.wholesale,
-        retail:    currentProduct.retail,
-        qty:       parseInt(document.getElementById('qtyInput').value) || 1,
-        notes:     document.getElementById('notesInput').value.trim()
+        retail: currentProduct.retail,
+        qty: parseInt(document.getElementById("qtyInput").value, 10) || 1,
+        notes: document.getElementById("notesInput").value.trim()
       };
 
-      var btn = document.getElementById('btnConfirm');
-      btn.textContent = 'Saving...';
+      var btn = document.getElementById("btnConfirm");
+      btn.textContent = "Saving...";
       btn.disabled = true;
 
       apiPost(scanData).then(function(result) {
-        btn.textContent = 'Add to Sheet';
+        btn.textContent = "Add to Sheet";
         btn.disabled = false;
+
         if (result.success) {
           addToLog(scanData);
-          showToast('Added to sheet');
+          showToast("Added to sheet");
           hideCards();
           resetForNextScan();
         } else {
-          showToast('Error: ' + result.error, true);
+          showToast("Error: " + (result.error || "Unknown error"), true);
         }
       }).catch(function(err) {
-        btn.textContent = 'Add to Sheet';
+        btn.textContent = "Add to Sheet";
         btn.disabled = false;
-        showToast('Failed: ' + err, true);
+        showToast("Failed: " + err, true);
       });
     }
 
@@ -573,185 +756,161 @@
       resetForNextScan();
     }
 
-    // ============================================================
-    // ADD NEW PRODUCT
-    // ============================================================
     function saveNewProduct() {
-      var style = document.getElementById('newStyle').value.trim();
-      if (!style) { showToast('Style name is required', true); return; }
+      var style = document.getElementById("newStyle").value.trim();
+      if (!style) {
+        showToast("Style name is required", true);
+        return;
+      }
 
       var product = {
-        action:    'addProduct',
-        ean13:     pendingBarcode,
-        style:     style,
-        color:     document.getElementById('newColor').value.trim(),
-        size:      document.getElementById('newSize').value.trim(),
-        category:  document.getElementById('newCategory').value.trim(),
-        season:    document.getElementById('newSeason').value.trim(),
-        wholesale: document.getElementById('newWholesale').value,
-        retail:    document.getElementById('newRetail').value
+        action: "addProduct",
+        ean13: pendingBarcode,
+        style: style,
+        color: document.getElementById("newColor").value.trim(),
+        size: document.getElementById("newSize").value.trim(),
+        category: document.getElementById("newCategory").value.trim(),
+        season: document.getElementById("newSeason").value.trim(),
+        wholesale: document.getElementById("newWholesale").value,
+        retail: document.getElementById("newRetail").value
       };
 
       apiPost(product).then(function(result) {
         if (result.success) {
-          var scanData = Object.assign({}, product, { action: 'logScan', qty: 1 });
-          apiPost(scanData).then(function() {
-            addToLog(scanData);
-            showToast('Product saved & logged');
-            document.getElementById('unknownCard').style.display = 'none';
+          var scanData = Object.assign({}, product, {
+            action: "logScan",
+            qty: 1,
+            notes: ""
+          });
+
+          apiPost(scanData).then(function(logResult) {
+            if (logResult.success) {
+              addToLog(scanData);
+              showToast("Product saved & logged");
+            } else {
+              showToast("Product saved, but log failed", true);
+            }
+
+            document.getElementById("unknownCard").style.display = "none";
+            resetForNextScan();
+          }).catch(function() {
+            showToast("Product saved, but log failed", true);
+            document.getElementById("unknownCard").style.display = "none";
             resetForNextScan();
           });
         } else {
-          showToast('Error: ' + result.error, true);
+          showToast("Error: " + (result.error || "Unknown error"), true);
         }
-      }).catch(function(err) { showToast('Failed: ' + err, true); });
+      }).catch(function(err) {
+        showToast("Failed: " + err, true);
+      });
     }
 
     function skipNewProduct() {
-      var scanData = { action: 'logScan', ean13: pendingBarcode, style: 'UNKNOWN', qty: 1 };
+      var scanData = {
+        action: "logScan",
+        ean13: pendingBarcode,
+        style: "UNKNOWN",
+        color: "",
+        size: "",
+        category: "",
+        wholesale: "",
+        retail: "",
+        qty: 1,
+        notes: ""
+      };
+
       apiPost(scanData).then(function(result) {
-        if (result.success) addToLog(scanData);
-        document.getElementById('unknownCard').style.display = 'none';
-        showToast('Barcode logged');
+        if (result.success) {
+          addToLog(scanData);
+          showToast("Barcode logged");
+        } else {
+          showToast("Error: " + (result.error || "Unknown error"), true);
+        }
+
+        document.getElementById("unknownCard").style.display = "none";
         resetForNextScan();
+      }).catch(function(err) {
+        showToast("Failed: " + err, true);
       });
     }
 
     function clearNewProductForm() {
-      ['newStyle','newColor','newSize','newCategory','newSeason','newWholesale','newRetail'].forEach(function(id) {
-        document.getElementById(id).value = '';
+      ["newStyle","newColor","newSize","newCategory","newSeason","newWholesale","newRetail"].forEach(function(id) {
+        document.getElementById(id).value = "";
       });
     }
 
-    // ============================================================
-    // SESSION LOG
-    // ============================================================
     function addToLog(item) {
       sessionLog.unshift(item);
-      document.getElementById('totalScans').textContent = sessionLog.length;
+      document.getElementById("totalScans").textContent = sessionLog.length;
       renderLog();
     }
 
     function renderLog() {
-      var list  = document.getElementById('logList');
-      var empty = document.getElementById('logEmpty');
-      if (!sessionLog.length) { empty.style.display = 'block'; list.innerHTML = ''; return; }
-      empty.style.display = 'none';
+      var list = document.getElementById("logList");
+      var empty = document.getElementById("logEmpty");
+
+      if (!sessionLog.length) {
+        empty.style.display = "block";
+        list.innerHTML = "";
+        return;
+      }
+
+      empty.style.display = "none";
+
       list.innerHTML = sessionLog.map(function(item) {
-        var detail = [item.color, item.size, item.category].filter(Boolean).join(' · ');
+        var detail = [item.color, item.size, item.category].filter(Boolean).join(" · ");
+
         return '<div class="log-item">' +
           '<div class="log-item-info">' +
-            '<div class="log-item-style">' + (item.style || 'Unknown') + '</div>' +
-            (detail ? '<div class="log-item-detail">' + detail + '</div>' : '') +
-            '<div class="log-item-detail" style="font-family:monospace;color:#444">' + item.ean13 + '</div>' +
-          '</div>' +
-          '<div class="log-item-qty">×' + (item.qty || 1) + '</div>' +
-        '</div>';
-      }).join('');
+            '<div class="log-item-style">' + escapeHtml(item.style || "Unknown") + "</div>" +
+            (detail ? '<div class="log-item-detail">' + escapeHtml(detail) + "</div>" : "") +
+            '<div class="log-item-detail" style="font-family:monospace;color:#444">' + escapeHtml(item.ean13 || "") + "</div>" +
+          "</div>" +
+          '<div class="log-item-qty">×' + (item.qty || 1) + "</div>" +
+        "</div>";
+      }).join("");
     }
 
     function clearLog() {
       sessionLog = [];
-      document.getElementById('totalScans').textContent = 0;
+      document.getElementById("totalScans").textContent = 0;
       renderLog();
     }
 
-    // ============================================================
-    // HELPERS
-    // ============================================================
     function resetForNextScan() {
       currentProduct = null;
       pendingBarcode = null;
-      setStatus('Ready — tap Start to scan again');
+      setStatus("Ready — tap Start to scan again");
     }
 
     function setStatus(msg, type) {
-      var el = document.getElementById('statusBar');
+      var el = document.getElementById("statusBar");
       el.innerHTML = msg;
-      el.className = 'status-bar' + (type ? ' ' + type : '');
+      el.className = "status-bar" + (type ? " " + type : "");
     }
 
     function showToast(msg, isError) {
-      var t = document.getElementById('toast');
+      var t = document.getElementById("toast");
       t.textContent = msg;
-      t.className = 'toast' + (isError ? ' error' : '');
-      t.classList.add('show');
-      setTimeout(function() { t.classList.remove('show'); }, 2800);
+      t.className = "toast" + (isError ? " error" : "");
+      t.classList.add("show");
+      setTimeout(function() {
+        t.classList.remove("show");
+      }, 2800);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     init();
-
-    
   </script>
-
-  <div id="reader"></div>
-<div id="status">Waiting to scan…</div>
-<div id="lastScan"></div>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script>
-const statusEl = document.getElementById("status");
-const lastScanEl = document.getElementById("lastScan");
-
-let lastCode = null;
-let lastTime = 0;
-
-function onScanSuccess(decodedText) {
-  const now = Date.now();
-
-  // prevent duplicate rapid-fire scans
-  if (decodedText === lastCode && now - lastTime < 2000) return;
-
-  lastCode = decodedText;
-  lastTime = now;
-
-  statusEl.textContent = "Scanned successfully";
-  lastScanEl.textContent = "EAN13: " + decodedText;
-
-  logScan(decodedText);
-}
-
-function onScanFailure(error) {
-  // leave silent or very light
-}
-
-const html5QrCode = new Html5Qrcode("reader");
-
-html5QrCode.start(
-  { facingMode: "environment" },
-  {
-    fps: 10,
-    qrbox: { width: 300, height: 140 },
-    aspectRatio: 1.7778,
-    formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13 ]
-  },
-  onScanSuccess,
-  onScanFailure
-).catch(err => {
-  statusEl.textContent = "Camera start failed: " + err;
-});
-
-function logScan(ean13) {
-  const scriptUrl = localStorage.getItem("SCRIPT_URL");
-  if (!scriptUrl) {
-    alert("Missing Apps Script URL");
-    return;
-  }
-
-  fetch(scriptUrl, {
-    method: "POST",
-    body: JSON.stringify({ action: "logScan", ean13 })
-  })
-  .then(r => r.json())
-  .then(data => {
-    document.getElementById("status").textContent =
-      "Logged: " + JSON.stringify(data);
-  })
-  .catch(err => {
-    document.getElementById("status").textContent =
-      "POST failed: " + err.message;
-  });
-}
-</script>
 </body>
 </html>
