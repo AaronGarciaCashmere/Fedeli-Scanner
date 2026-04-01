@@ -315,6 +315,7 @@
     var lastScannedCode = '';
     var lastScanTime = 0;
     var scanCooldown = 2500;
+    var focusInterval = null;
 
     // ============================================================
     // SCANNER
@@ -353,19 +354,14 @@
         document.getElementById('btnStart').classList.add('scanning');
         setStatus('Scanning... point at a barcode', 'active');
 
-        // Force continuous autofocus on the video track after stream starts
+        // iOS only supports single-shot 'auto' focus — pulse it every 2s to keep refocusing
         setTimeout(function() {
-          try {
-            var videoEl = document.querySelector('#reader video');
-            if (videoEl && videoEl.srcObject) {
-              var track = videoEl.srcObject.getVideoTracks()[0];
-              if (track && track.applyConstraints) {
-                track.applyConstraints({
-                  advanced: [{ focusMode: 'continuous' }]
-                }).catch(function() {});
-              }
-            }
-          } catch (e) {}
+          triggerFocus();
+          focusInterval = setInterval(triggerFocus, 2000);
+
+          // Tap-to-focus on the video element
+          var readerEl = document.getElementById('reader');
+          readerEl.addEventListener('click', triggerFocus);
         }, 800);
 
       }).catch(function(err) {
@@ -373,7 +369,20 @@
       });
     }
 
+    function triggerFocus() {
+      try {
+        var videoEl = document.querySelector('#reader video');
+        if (videoEl && videoEl.srcObject) {
+          var track = videoEl.srcObject.getVideoTracks()[0];
+          if (track && track.applyConstraints) {
+            track.applyConstraints({ advanced: [{ focusMode: 'auto' }] }).catch(function() {});
+          }
+        }
+      } catch (e) {}
+    }
+
     function stopScanner() {
+      if (focusInterval) { clearInterval(focusInterval); focusInterval = null; }
       if (scanner && isScanning) {
         scanner.stop().then(function() {
           isScanning = false;
