@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Fedeli Scanner</title>
 
+  <script src="https://unpkg.com/@zxing/browser@0.1.1/umd/index.min.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -369,19 +371,17 @@
     // ============================================================
     // STATE
     // ============================================================
-    var isScanning    = false;
-    var videoStream   = null;
-    var detector      = null;
-    var detectLoop    = null;
+    var isScanning     = false;
+    var zxingControls  = null;
     var currentProduct = null;
     var pendingBarcode = null;
-    var sessionLog    = [];
+    var sessionLog     = [];
     var lastScannedCode = '';
-    var lastScanTime  = 0;
-    var scanCooldown  = 2500;
+    var lastScanTime   = 0;
+    var scanCooldown   = 2500;
 
     // ============================================================
-    // SCANNER — uses native BarcodeDetector (iOS 17+)
+    // SCANNER — ZXing library (works on all iOS versions)
     // ============================================================
     function toggleScanner() {
       if (!SCRIPT_URL) {
@@ -393,55 +393,49 @@
     }
 
     function startScanner() {
-      if (!('BarcodeDetector' in window)) {
-        setStatus('BarcodeDetector not supported. Update to iOS 17 or later.', 'error');
-        return;
-      }
+      var video = document.getElementById('cameraVideo');
+      video.style.display = 'block';
+      document.getElementById('cameraPlaceholder').style.display = 'none';
+      document.getElementById('scanGuide').style.display = 'block';
 
-      navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width:  { ideal: 1280 },
-          height: { ideal: 720 }
+      var hints = new Map();
+      hints.set(ZXingBrowser.DecodeHintType ? ZXingBrowser.DecodeHintType.TRY_HARDER : 3, true);
+
+      var codeReader = new ZXingBrowser.BrowserMultiFormatReader(hints);
+
+      codeReader.decodeFromConstraints(
+        {
+          video: {
+            facingMode: 'environment',
+            width:  { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        },
+        video,
+        function(result, err, controls) {
+          if (!zxingControls) zxingControls = controls;
+          if (result) {
+            handleDetected(result.getText());
+          }
         }
-      }).then(function(stream) {
-        videoStream = stream;
-        var video = document.getElementById('cameraVideo');
-        video.srcObject = stream;
-        video.style.display = 'block';
-        document.getElementById('cameraPlaceholder').style.display = 'none';
-        document.getElementById('scanGuide').style.display = 'block';
-
-        return video.play();
-
-      }).then(function() {
+      ).then(function(controls) {
+        zxingControls = controls;
         isScanning = true;
         document.getElementById('btnStart').textContent = 'Stop Camera';
         document.getElementById('btnStart').classList.add('scanning');
         setStatus('Scanning... point at a barcode', 'active');
-
-        detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] });
-
-        var video = document.getElementById('cameraVideo');
-        detectLoop = setInterval(function() {
-          if (!isScanning) return;
-          detector.detect(video).then(function(barcodes) {
-            if (barcodes.length > 0) {
-              handleDetected(barcodes[0].rawValue);
-            }
-          }).catch(function() {});
-        }, 150);
-
       }).catch(function(err) {
         setStatus('Camera error: ' + err, 'error');
+        video.style.display = 'none';
+        document.getElementById('cameraPlaceholder').style.display = 'block';
+        document.getElementById('scanGuide').style.display = 'none';
       });
     }
 
     function stopScanner() {
-      if (detectLoop) { clearInterval(detectLoop); detectLoop = null; }
-      if (videoStream) {
-        videoStream.getTracks().forEach(function(t) { t.stop(); });
-        videoStream = null;
+      if (zxingControls) {
+        zxingControls.stop();
+        zxingControls = null;
       }
       var video = document.getElementById('cameraVideo');
       video.srcObject = null;
