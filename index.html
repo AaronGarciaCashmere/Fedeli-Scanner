@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Fedeli Scanner</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
+
+    .header {
+      background: #1a1a1a;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-title { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #fff; }
+    .header-subtitle { font-size: 11px; color: #888; letter-spacing: 1px; text-transform: uppercase; }
+    .scan-count { background: #2a2a2a; border-radius: 20px; padding: 6px 14px; font-size: 13px; color: #aaa; }
+    .scan-count span { color: #fff; font-weight: 700; }
+
+    .content { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+    /* CONFIG BANNER */
+    .config-banner {
+      background: #2a1a00;
+      border: 1px solid #ff9500;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #ff9500;
+      display: none;
+    }
+    .config-banner.visible { display: block; }
+    .config-banner strong { display: block; margin-bottom: 6px; font-size: 14px; }
+    .config-input {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #ff9500;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      font-family: monospace;
+      margin-top: 10px;
+      outline: none;
+    }
+    .btn-save-config {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #ff9500;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .camera-section {
+      background: #1a1a1a;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid #2a2a2a;
+    }
+    #reader { width: 100%; }
+
+    .btn-start {
+      width: 100%;
+      padding: 18px;
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: opacity 0.2s;
+    }
+    .btn-start:active { opacity: 0.8; }
+    .btn-start.scanning { background: #2a2a2a; color: #888; }
+
+    .status-bar { text-align: center; padding: 10px; font-size: 13px; color: #666; letter-spacing: 0.5px; }
+    .status-bar.active { color: #4CAF50; }
+    .status-bar.error { color: #f44336; }
+
+    .product-card {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #2a2a2a;
+      display: none;
+    }
+    .product-card.visible { display: block; }
+    .product-card.found { border-color: #4CAF50; }
+    .product-card.unknown { border-color: #f44336; }
+
+    .card-label { font-size: 10px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+    .card-style { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .tag { background: #2a2a2a; border-radius: 8px; padding: 6px 12px; font-size: 13px; color: #ccc; }
+    .tag strong { color: #fff; display: block; font-size: 11px; }
+
+    .price-row { display: flex; gap: 12px; margin-bottom: 16px; }
+    .price-box { flex: 1; background: #2a2a2a; border-radius: 10px; padding: 10px 14px; }
+    .price-box label { font-size: 10px; color: #666; letter-spacing: 1px; display: block; margin-bottom: 2px; }
+    .price-box .price-val { font-size: 18px; font-weight: 700; color: #fff; }
+
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .qty-label { font-size: 13px; color: #888; white-space: nowrap; }
+    .qty-controls { display: flex; align-items: center; background: #2a2a2a; border-radius: 10px; overflow: hidden; }
+    .qty-btn { width: 44px; height: 44px; background: transparent; border: none; color: #fff; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .qty-btn:active { background: #3a3a3a; }
+    .qty-display { width: 48px; text-align: center; font-size: 20px; font-weight: 700; background: transparent; border: none; color: #fff; -webkit-appearance: none; }
+
+    .notes-input { width: 100%; background: #2a2a2a; border: none; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; font-family: inherit; resize: none; margin-bottom: 16px; outline: none; }
+    .notes-input::placeholder { color: #555; }
+
+    .action-row { display: flex; gap: 10px; }
+    .btn-confirm { flex: 1; padding: 14px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .btn-confirm:active { opacity: 0.8; }
+    .btn-discard { padding: 14px 20px; background: #2a2a2a; color: #888; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; }
+
+    .form-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: 1px; }
+    .form-ean { font-size: 12px; color: #666; margin-bottom: 16px; font-family: monospace; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field label { font-size: 10px; color: #666; letter-spacing: 1.5px; text-transform: uppercase; }
+    .form-field input { background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; font-family: inherit; outline: none; -webkit-appearance: none; }
+    .form-field input:focus { border-color: #555; }
+    .form-field.full { grid-column: span 2; }
+    .btn-save { width: 100%; padding: 14px; background: #fff; color: #000; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+    .btn-skip-product { width: 100%; padding: 12px; background: transparent; color: #666; border: none; font-size: 14px; cursor: pointer; }
+
+    .log-section { margin-top: 8px; }
+    .log-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .log-title { font-size: 11px; letter-spacing: 2px; color: #555; text-transform: uppercase; }
+    .btn-clear { font-size: 12px; color: #555; background: none; border: none; cursor: pointer; padding: 4px 8px; }
+    .log-empty { text-align: center; color: #444; font-size: 14px; padding: 32px 0; }
+    .log-item { background: #1a1a1a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; border: 1px solid #2a2a2a; display: flex; align-items: flex-start; gap: 12px; }
+    .log-item-info { flex: 1; min-width: 0; }
+    .log-item-style { font-size: 15px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .log-item-detail { font-size: 12px; color: #666; margin-top: 2px; }
+    .log-item-qty { background: #2a2a2a; border-radius: 8px; padding: 4px 12px; font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 14px; font-weight: 600; transition: transform 0.3s ease; z-index: 999; white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error { background: #f44336; color: #fff; }
+
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #444; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .bottom-spacer { height: 40px; }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div>
+      <div class="header-title">FEDELI</div>
+      <div class="header-subtitle">Showroom Scanner</div>
+    </div>
+    <div class="scan-count">Session: <span id="totalScans">0</span></div>
+  </div>
+
+  <div class="content">
+
+    <!-- SCRIPT URL CONFIG BANNER -->
+    <div class="config-banner" id="configBanner">
+      <strong>One-time setup required</strong>
+      Paste your Google Apps Script deployment URL below.
+      <input class="config-input" id="scriptUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      <button class="btn-save-config" onclick="saveScriptUrl()">Save & Continue</button>
+    </div>
+
+    <!-- CAMERA -->
+    <div class="camera-section">
+      <div id="reader"></div>
+    </div>
+
+    <button class="btn-start" id="btnStart" onclick="toggleScanner()">Start Scanning</button>
+    <div class="status-bar" id="statusBar">Tap to activate camera</div>
+
+    <!-- PRODUCT CARD (found) -->
+    <div class="product-card" id="productCard">
+      <div class="card-label">Scanned Product</div>
+      <div class="card-style" id="cardStyle"></div>
+      <div class="card-tags" id="cardTags"></div>
+      <div class="price-row">
+        <div class="price-box"><label>WHOLESALE</label><div class="price-val" id="cardWholesale"></div></div>
+        <div class="price-box"><label>RETAIL</label><div class="price-val" id="cardRetail"></div></div>
+      </div>
+      <div class="qty-row">
+        <span class="qty-label">Quantity:</span>
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <input class="qty-display" id="qtyInput" type="number" value="1" min="1" max="999">
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <textarea class="notes-input" id="notesInput" rows="2" placeholder="Notes (optional)..."></textarea>
+      <div class="action-row">
+        <button class="btn-confirm" id="btnConfirm" onclick="confirmScan()">Add to Sheet</button>
+        <button class="btn-discard" onclick="discardScan()">Skip</button>
+      </div>
+    </div>
+
+    <!-- UNKNOWN BARCODE CARD -->
+    <div class="product-card unknown" id="unknownCard" style="display:none">
+      <div class="form-title">Unknown Barcode — Add to Products?</div>
+      <div class="form-ean" id="unknownEan"></div>
+      <div class="form-grid">
+        <div class="form-field full"><label>Style Name</label><input type="text" id="newStyle" placeholder="e.g. Cashmere Crewneck"></div>
+        <div class="form-field"><label>Color</label><input type="text" id="newColor" placeholder="e.g. Ivory"></div>
+        <div class="form-field"><label>Size</label><input type="text" id="newSize" placeholder="e.g. M"></div>
+        <div class="form-field"><label>Category</label><input type="text" id="newCategory" placeholder="e.g. Knitwear"></div>
+        <div class="form-field"><label>Season</label><input type="text" id="newSeason" placeholder="e.g. FW26"></div>
+        <div class="form-field"><label>Wholesale $</label><input type="number" id="newWholesale" placeholder="0.00"></div>
+        <div class="form-field"><label>Retail $</label><input type="number" id="newRetail" placeholder="0.00"></div>
+      </div>
+      <button class="btn-save" onclick="saveNewProduct()">Save Product & Continue</button>
+      <button class="btn-skip-product" onclick="skipNewProduct()">Skip — just log the barcode</button>
+    </div>
+
+    <!-- SESSION LOG -->
+    <div class="log-section">
+      <div class="log-header">
+        <span class="log-title">Session Log</span>
+        <button class="btn-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div class="log-empty" id="logEmpty">No scans yet</div>
+      <div id="logList"></div>
+    </div>
+
+    <div class="bottom-spacer"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ============================================================
+    // CONFIG — Script URL stored in localStorage
+    // ============================================================
+    var SCRIPT_URL = localStorage.getItem('fedeli_script_url') || '';
+
+    function init() {
+      if (!SCRIPT_URL) {
+        document.getElementById('configBanner').classList.add('visible');
+      }
+      renderLog();
+    }
+
+    function saveScriptUrl() {
+      var val = document.getElementById('scriptUrlInput').value.trim();
+      if (!val || !val.startsWith('https://script.google.com')) {
+        showToast('Paste a valid Apps Script URL', true);
+        return;
+      }
+      SCRIPT_URL = val;
+      localStorage.setItem('fedeli_script_url', val);
+      document.getElementById('configBanner').classList.remove('visible');
+      showToast('URL saved');
+    }
+
+    // ============================================================
+    // API CALLS — using fetch() instead of google.script.run
+    // ============================================================
+    function apiGet(params) {
+      var url = SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
+        return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+      }).join('&');
+      return fetch(url).then(function(r) { return r.json(); });
+    }
+
+    function apiPost(data) {
+      return fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        redirect: 'follow'
+      }).then(function(r) { return r.json(); });
+    }
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    var scanner = null;
+    var isScanning = false;
+    var currentProduct = null;
+    var pendingBarcode = null;
+    var sessionLog = [];
+    var lastScannedCode = '';
+    var lastScanTime = 0;
+    var scanCooldown = 2500;
+
+    // ============================================================
+    // SCANNER
+    // ============================================================
+    function toggleScanner() {
+      if (!SCRIPT_URL) {
+        document.getElementById('configBanner').classList.add('visible');
+        showToast('Set your Apps Script URL first', true);
+        return;
+      }
+      isScanning ? stopScanner() : startScanner();
+    }
+
+    function startScanner() {
+      var config = {
+        fps: 10,
+        qrbox: { width: 280, height: 120 },
+        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8],
+        aspectRatio: 1.5,
+        showTorchButtonIfSupported: true
+      };
+
+      scanner = new Html5Qrcode('reader');
+
+      scanner.start(
+        { facingMode: 'environment' },
+        config,
+        onScanSuccess,
+        function() {}
+      ).then(function() {
+        isScanning = true;
+        document.getElementById('btnStart').textContent = 'Stop Camera';
+        document.getElementById('btnStart').classList.add('scanning');
+        setStatus('Scanning... point at a barcode', 'active');
+      }).catch(function(err) {
+        setStatus('Camera error: ' + err, 'error');
+      });
+    }
+
+    function stopScanner() {
+      if (scanner && isScanning) {
+        scanner.stop().then(function() {
+          isScanning = false;
+          document.getElementById('btnStart').textContent = 'Start Scanning';
+          document.getElementById('btnStart').classList.remove('scanning');
+          setStatus('Camera stopped');
+        });
+      }
+    }
+
+    // ============================================================
+    // SCAN EVENTS
+    // ============================================================
+    function onScanSuccess(decodedText) {
+      var now = Date.now();
+      if (decodedText === lastScannedCode && (now - lastScanTime) < scanCooldown) return;
+      lastScannedCode = decodedText;
+      lastScanTime = now;
+
+      stopScanner();
+      hideCards();
+      setStatus('<span class="spinner"></span> Looking up ' + decodedText + '...');
+
+      apiGet({ action: 'lookup', barcode: decodedText })
+        .then(function(result) { handleLookupResult(result, decodedText); })
+        .catch(function(err) { setStatus('Lookup error: ' + err, 'error'); });
+    }
+
+    function handleLookupResult(result, barcode) {
+      if (result.found) {
+        currentProduct = result;
+        showProductCard(result);
+        setStatus('Product found');
+      } else {
+        pendingBarcode = barcode;
+        showUnknownCard(barcode);
+        setStatus('Unknown barcode — add product?', 'error');
+      }
+    }
+
+    // ============================================================
+    // PRODUCT CARD
+    // ============================================================
+    function showProductCard(p) {
+      var card = document.getElementById('productCard');
+      card.classList.add('visible', 'found');
+      document.getElementById('cardStyle').textContent = p.style || 'Unknown Style';
+
+      var tags = '';
+      if (p.color)    tags += '<div class="tag"><strong>COLOR</strong>' + p.color + '</div>';
+      if (p.size)     tags += '<div class="tag"><strong>SIZE</strong>' + p.size + '</div>';
+      if (p.category) tags += '<div class="tag"><strong>TYPE</strong>' + p.category + '</div>';
+      if (p.season)   tags += '<div class="tag"><strong>SEASON</strong>' + p.season + '</div>';
+      document.getElementById('cardTags').innerHTML = tags;
+
+      document.getElementById('cardWholesale').textContent = p.wholesale ? '$' + p.wholesale : '—';
+      document.getElementById('cardRetail').textContent    = p.retail    ? '$' + p.retail    : '—';
+      document.getElementById('qtyInput').value = 1;
+      document.getElementById('notesInput').value = '';
+      document.getElementById('unknownCard').style.display = 'none';
+    }
+
+    function showUnknownCard(barcode) {
+      document.getElementById('productCard').classList.remove('visible');
+      document.getElementById('unknownCard').style.display = 'block';
+      document.getElementById('unknownEan').textContent = 'EAN13: ' + barcode;
+      clearNewProductForm();
+    }
+
+    function hideCards() {
+      document.getElementById('productCard').classList.remove('visible');
+      document.getElementById('unknownCard').style.display = 'none';
+    }
+
+    function changeQty(delta) {
+      var input = document.getElementById('qtyInput');
+      input.value = Math.max(1, (parseInt(input.value) || 1) + delta);
+    }
+
+    // ============================================================
+    // CONFIRM / DISCARD
+    // ============================================================
+    function confirmScan() {
+      if (!currentProduct) return;
+
+      var scanData = {
+        action:    'logScan',
+        ean13:     currentProduct.ean13,
+        style:     currentProduct.style,
+        color:     currentProduct.color,
+        size:      currentProduct.size,
+        category:  currentProduct.category,
+        wholesale: currentProduct.wholesale,
+        retail:    currentProduct.retail,
+        qty:       parseInt(document.getElementById('qtyInput').value) || 1,
+        notes:     document.getElementById('notesInput').value.trim()
+      };
+
+      var btn = document.getElementById('btnConfirm');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      apiPost(scanData)
+        .then(function(result) {
+          btn.textContent = 'Add to Sheet';
+          btn.disabled = false;
+          if (result.success) {
+            addToLog(scanData);
+            showToast('Added to sheet');
+            hideCards();
+            resetForNextScan();
+          } else {
+            showToast('Error: ' + result.error, true);
+          }
+        })
+        .catch(function(err) {
+          btn.textContent = 'Add to Sheet';
+          btn.disabled = false;
+          showToast('Failed: ' + err, true);
+        });
+    }
+
+    function discardScan() {
+      hideCards();
+      currentProduct = null;
+      resetForNextScan();
+    }
+
+    // ============================================================
+    // ADD NEW PRODUCT
+    // ============================================================
+    function saveNewProduct() {
+      var style = document.getElementById('newStyle').value.trim();
+      if (!style) { showToast('Style name is required', true); return; }
+
+      var product = {
+        action:    'addProduct',
+        ean13:     pendingBarcode,
+        style:     style,
+        color:     document.getElementById('newColor').value.trim(),
+        size:      document.getElementById('newSize').value.trim(),
+        category:  document.getElementById('newCategory').value.trim(),
+        season:    document.getElementById('newSeason').value.trim(),
+        wholesale: document.getElementById('newWholesale').value,
+        retail:    document.getElementById('newRetail').value
+      };
+
+      apiPost(product).then(function(result) {
+        if (result.success) {
+          var scanData = Object.assign({}, product, { action: 'logScan', qty: 1 });
+          apiPost(scanData).then(function() {
+            addToLog(scanData);
+            showToast('Product saved & logged');
+            document.getElementById('unknownCard').style.display = 'none';
+            resetForNextScan();
+          });
+        } else {
+          showToast('Error: ' + result.error, true);
+        }
+      }).catch(function(err) { showToast('Failed: ' + err, true); });
+    }
+
+    function skipNewProduct() {
+      var scanData = { action: 'logScan', ean13: pendingBarcode, style: 'UNKNOWN', qty: 1 };
+      apiPost(scanData).then(function(result) {
+        if (result.success) addToLog(scanData);
+        document.getElementById('unknownCard').style.display = 'none';
+        showToast('Barcode logged');
+        resetForNextScan();
+      });
+    }
+
+    function clearNewProductForm() {
+      ['newStyle','newColor','newSize','newCategory','newSeason','newWholesale','newRetail'].forEach(function(id) {
+        document.getElementById(id).value = '';
+      });
+    }
+
+    // ============================================================
+    // SESSION LOG
+    // ============================================================
+    function addToLog(item) {
+      sessionLog.unshift(item);
+      document.getElementById('totalScans').textContent = sessionLog.length;
+      renderLog();
+    }
+
+    function renderLog() {
+      var list  = document.getElementById('logList');
+      var empty = document.getElementById('logEmpty');
+      if (!sessionLog.length) { empty.style.display = 'block'; list.innerHTML = ''; return; }
+      empty.style.display = 'none';
+      list.innerHTML = sessionLog.map(function(item) {
+        var detail = [item.color, item.size, item.category].filter(Boolean).join(' · ');
+        return '<div class="log-item">' +
+          '<div class="log-item-info">' +
+            '<div class="log-item-style">' + (item.style || 'Unknown') + '</div>' +
+            (detail ? '<div class="log-item-detail">' + detail + '</div>' : '') +
+            '<div class="log-item-detail" style="font-family:monospace;color:#444">' + item.ean13 + '</div>' +
+          '</div>' +
+          '<div class="log-item-qty">×' + (item.qty || 1) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function clearLog() { sessionLog = []; document.getElementById('totalScans').textContent = 0; renderLog(); }
+
+    // ============================================================
+    // HELPERS
+    // ============================================================
+    function resetForNextScan() { currentProduct = null; pendingBarcode = null; setStatus('Ready — tap Start to scan again'); }
+
+    function setStatus(msg, type) {
+      var el = document.getElementById('statusBar');
+      el.innerHTML = msg;
+      el.className = 'status-bar' + (type ? ' ' + type : '');
+    }
+
+    function showToast(msg, isError) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, 2800);
+    }
+
+    init();
+  </script>
+</body>
+</html>
