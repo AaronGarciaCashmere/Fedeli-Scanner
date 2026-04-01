@@ -372,7 +372,9 @@
     // STATE
     // ============================================================
     var isScanning     = false;
-    var zxingControls  = null;
+    var videoStream    = null;
+    var decodeTimer    = null;
+    var zxingReader    = null;
     var currentProduct = null;
     var pendingBarcode = null;
     var sessionLog     = [];
@@ -381,7 +383,7 @@
     var scanCooldown   = 2500;
 
     // ============================================================
-    // SCANNER — ZXing library (works on all iOS versions)
+    // SCANNER — getUserMedia for camera, ZXing for decoding
     // ============================================================
     function toggleScanner() {
       if (!SCRIPT_URL) {
@@ -393,49 +395,57 @@
     }
 
     function startScanner() {
-      var video = document.getElementById('cameraVideo');
-      video.style.display = 'block';
-      document.getElementById('cameraPlaceholder').style.display = 'none';
-      document.getElementById('scanGuide').style.display = 'block';
-
-      var hints = new Map();
-      hints.set(ZXingBrowser.DecodeHintType ? ZXingBrowser.DecodeHintType.TRY_HARDER : 3, true);
-
-      var codeReader = new ZXingBrowser.BrowserMultiFormatReader(hints);
-
-      codeReader.decodeFromConstraints(
-        {
-          video: {
-            facingMode: 'environment',
-            width:  { ideal: 1280 },
-            height: { ideal: 720 }
-          }
-        },
-        video,
-        function(result, err, controls) {
-          if (!zxingControls) zxingControls = controls;
-          if (result) {
-            handleDetected(result.getText());
-          }
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width:  { ideal: 1920 },
+          height: { ideal: 1080 }
         }
-      ).then(function(controls) {
-        zxingControls = controls;
-        isScanning = true;
-        document.getElementById('btnStart').textContent = 'Stop Camera';
-        document.getElementById('btnStart').classList.add('scanning');
-        setStatus('Scanning... point at a barcode', 'active');
+      }).then(function(stream) {
+        videoStream = stream;
+        var video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        video.style.display = 'block';
+        document.getElementById('cameraPlaceholder').style.display = 'none';
+        document.getElementById('scanGuide').style.display = 'block';
+
+        video.play().then(function() {
+          isScanning = true;
+          document.getElementById('btnStart').textContent = 'Stop Camera';
+          document.getElementById('btnStart').classList.add('scanning');
+          setStatus('Hold barcode 15–20cm from camera', 'active');
+
+          zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
+          scheduleDetect();
+        });
+
       }).catch(function(err) {
         setStatus('Camera error: ' + err, 'error');
-        video.style.display = 'none';
-        document.getElementById('cameraPlaceholder').style.display = 'block';
-        document.getElementById('scanGuide').style.display = 'none';
       });
     }
 
+    function scheduleDetect() {
+      if (!isScanning) return;
+      decodeTimer = setTimeout(function() {
+        var video = document.getElementById('cameraVideo');
+        if (!video || video.readyState < 2) { scheduleDetect(); return; }
+        zxingReader.decodeFromVideoElement(video)
+          .then(function(result) {
+            if (result) handleDetected(result.getText());
+            scheduleDetect();
+          })
+          .catch(function() {
+            scheduleDetect();
+          });
+      }, 200);
+    }
+
     function stopScanner() {
-      if (zxingControls) {
-        zxingControls.stop();
-        zxingControls = null;
+      isScanning = false;
+      if (decodeTimer) { clearTimeout(decodeTimer); decodeTimer = null; }
+      if (videoStream) {
+        videoStream.getTracks().forEach(function(t) { t.stop(); });
+        videoStream = null;
       }
       var video = document.getElementById('cameraVideo');
       video.srcObject = null;
@@ -443,7 +453,6 @@
       document.getElementById('cameraPlaceholder').style.display = 'block';
       document.getElementById('scanGuide').style.display = 'none';
 
-      isScanning = false;
       document.getElementById('btnStart').textContent = 'Start Scanning';
       document.getElementById('btnStart').classList.remove('scanning');
       setStatus('Camera stopped');
