@@ -730,6 +730,28 @@ html5QrCode.start(
 ).catch(err => {
   statusEl.textContent = "Camera start failed: " + err;
 });
+
+function logScan(ean13) {
+  const scriptUrl = localStorage.getItem("SCRIPT_URL");
+  if (!scriptUrl) {
+    alert("Missing Apps Script URL");
+    return;
+  }
+
+  fetch(scriptUrl, {
+    method: "POST",
+    body: JSON.stringify({ action: "logScan", ean13 })
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("status").textContent =
+      "Logged: " + JSON.stringify(data);
+  })
+  .catch(err => {
+    document.getElementById("status").textContent =
+      "POST failed: " + err.message;
+  });
+}
 </script>
 </body>
 </html>
