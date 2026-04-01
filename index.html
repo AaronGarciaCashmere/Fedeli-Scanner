@@ -7,8 +7,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Fedeli Scanner</title>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -76,14 +74,75 @@
       width: 100%;
     }
 
+    /* CAMERA */
     .camera-section {
-      background: #1a1a1a;
+      background: #000;
       border-radius: 16px;
       overflow: hidden;
       margin-bottom: 16px;
       border: 1px solid #2a2a2a;
+      position: relative;
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #reader { width: 100%; }
+    #cameraVideo {
+      width: 100%;
+      display: block;
+      border-radius: 16px;
+    }
+    .scan-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 75%;
+      height: 80px;
+      pointer-events: none;
+    }
+    .scan-guide::before, .scan-guide::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: #fff;
+      border-style: solid;
+      opacity: 0.8;
+    }
+    .scan-guide::before { top: 0; left: 0; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+    .scan-guide::after  { top: 0; right: 0; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+    .scan-guide-bottom::before, .scan-guide-bottom::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: #fff;
+      border-style: solid;
+      opacity: 0.8;
+    }
+    .scan-guide-bottom::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; border-radius: 0 0 0 3px; }
+    .scan-guide-bottom::after  { bottom: 0; right: 0; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+    .scan-line {
+      position: absolute;
+      left: 5%;
+      width: 90%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #fff, transparent);
+      animation: scanline 2s ease-in-out infinite;
+      opacity: 0.6;
+    }
+    @keyframes scanline {
+      0%   { top: 15%; }
+      50%  { top: 75%; }
+      100% { top: 15%; }
+    }
+    .camera-placeholder {
+      color: #444;
+      font-size: 14px;
+      text-align: center;
+      padding: 40px 20px;
+    }
 
     .btn-start {
       width: 100%;
@@ -198,8 +257,13 @@
     </div>
 
     <!-- CAMERA -->
-    <div class="camera-section">
-      <div id="reader"></div>
+    <div class="camera-section" id="cameraSection">
+      <div class="camera-placeholder" id="cameraPlaceholder">Camera inactive</div>
+      <video id="cameraVideo" autoplay playsinline muted style="display:none;"></video>
+      <div class="scan-guide" id="scanGuide" style="display:none;">
+        <div class="scan-guide-bottom"></div>
+        <div class="scan-line"></div>
+      </div>
     </div>
 
     <button class="btn-start" id="btnStart" onclick="toggleScanner()">Start Scanning</button>
@@ -263,14 +327,12 @@
 
   <script>
     // ============================================================
-    // CONFIG — Script URL stored in localStorage
+    // CONFIG
     // ============================================================
     var SCRIPT_URL = localStorage.getItem('fedeli_script_url') || '';
 
     function init() {
-      if (!SCRIPT_URL) {
-        document.getElementById('configBanner').classList.add('visible');
-      }
+      if (!SCRIPT_URL) document.getElementById('configBanner').classList.add('visible');
       renderLog();
     }
 
@@ -287,7 +349,7 @@
     }
 
     // ============================================================
-    // API CALLS — using fetch() instead of google.script.run
+    // API
     // ============================================================
     function apiGet(params) {
       var url = SCRIPT_URL + '?' + Object.keys(params).map(function(k) {
@@ -307,18 +369,19 @@
     // ============================================================
     // STATE
     // ============================================================
-    var scanner = null;
-    var isScanning = false;
+    var isScanning    = false;
+    var videoStream   = null;
+    var detector      = null;
+    var detectLoop    = null;
     var currentProduct = null;
     var pendingBarcode = null;
-    var sessionLog = [];
+    var sessionLog    = [];
     var lastScannedCode = '';
-    var lastScanTime = 0;
-    var scanCooldown = 2500;
-    var focusInterval = null;
+    var lastScanTime  = 0;
+    var scanCooldown  = 2500;
 
     // ============================================================
-    // SCANNER
+    // SCANNER — uses native BarcodeDetector (iOS 17+)
     // ============================================================
     function toggleScanner() {
       if (!SCRIPT_URL) {
@@ -330,84 +393,83 @@
     }
 
     function startScanner() {
-      var config = {
-        fps: 15,
-        qrbox: { width: 300, height: 140 },
-        formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8],
-        aspectRatio: 1.7,
-        showTorchButtonIfSupported: true,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
+      if (!('BarcodeDetector' in window)) {
+        setStatus('BarcodeDetector not supported. Update to iOS 17 or later.', 'error');
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width:  { ideal: 1280 },
+          height: { ideal: 720 }
         }
-      };
+      }).then(function(stream) {
+        videoStream = stream;
+        var video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        video.style.display = 'block';
+        document.getElementById('cameraPlaceholder').style.display = 'none';
+        document.getElementById('scanGuide').style.display = 'block';
 
-      scanner = new Html5Qrcode('reader');
+        return video.play();
 
-      scanner.start(
-        { facingMode: 'environment' },
-        config,
-        onScanSuccess,
-        function() {}
-      ).then(function() {
+      }).then(function() {
         isScanning = true;
         document.getElementById('btnStart').textContent = 'Stop Camera';
         document.getElementById('btnStart').classList.add('scanning');
         setStatus('Scanning... point at a barcode', 'active');
 
-        // iOS only supports single-shot 'auto' focus — pulse it every 2s to keep refocusing
-        setTimeout(function() {
-          triggerFocus();
-          focusInterval = setInterval(triggerFocus, 2000);
+        detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] });
 
-          // Tap-to-focus on the video element
-          var readerEl = document.getElementById('reader');
-          readerEl.addEventListener('click', triggerFocus);
-        }, 800);
+        var video = document.getElementById('cameraVideo');
+        detectLoop = setInterval(function() {
+          if (!isScanning) return;
+          detector.detect(video).then(function(barcodes) {
+            if (barcodes.length > 0) {
+              handleDetected(barcodes[0].rawValue);
+            }
+          }).catch(function() {});
+        }, 150);
 
       }).catch(function(err) {
         setStatus('Camera error: ' + err, 'error');
       });
     }
 
-    function triggerFocus() {
-      try {
-        var videoEl = document.querySelector('#reader video');
-        if (videoEl && videoEl.srcObject) {
-          var track = videoEl.srcObject.getVideoTracks()[0];
-          if (track && track.applyConstraints) {
-            track.applyConstraints({ advanced: [{ focusMode: 'auto' }] }).catch(function() {});
-          }
-        }
-      } catch (e) {}
-    }
-
     function stopScanner() {
-      if (focusInterval) { clearInterval(focusInterval); focusInterval = null; }
-      if (scanner && isScanning) {
-        scanner.stop().then(function() {
-          isScanning = false;
-          document.getElementById('btnStart').textContent = 'Start Scanning';
-          document.getElementById('btnStart').classList.remove('scanning');
-          setStatus('Camera stopped');
-        });
+      if (detectLoop) { clearInterval(detectLoop); detectLoop = null; }
+      if (videoStream) {
+        videoStream.getTracks().forEach(function(t) { t.stop(); });
+        videoStream = null;
       }
+      var video = document.getElementById('cameraVideo');
+      video.srcObject = null;
+      video.style.display = 'none';
+      document.getElementById('cameraPlaceholder').style.display = 'block';
+      document.getElementById('scanGuide').style.display = 'none';
+
+      isScanning = false;
+      document.getElementById('btnStart').textContent = 'Start Scanning';
+      document.getElementById('btnStart').classList.remove('scanning');
+      setStatus('Camera stopped');
     }
 
     // ============================================================
-    // SCAN EVENTS
+    // DETECTION
     // ============================================================
-    function onScanSuccess(decodedText) {
+    function handleDetected(code) {
       var now = Date.now();
-      if (decodedText === lastScannedCode && (now - lastScanTime) < scanCooldown) return;
-      lastScannedCode = decodedText;
+      if (code === lastScannedCode && (now - lastScanTime) < scanCooldown) return;
+      lastScannedCode = code;
       lastScanTime = now;
 
       stopScanner();
       hideCards();
-      setStatus('<span class="spinner"></span> Looking up ' + decodedText + '...');
+      setStatus('<span class="spinner"></span> Looking up ' + code + '...');
 
-      apiGet({ action: 'lookup', barcode: decodedText })
-        .then(function(result) { handleLookupResult(result, decodedText); })
+      apiGet({ action: 'lookup', barcode: code })
+        .then(function(result) { handleLookupResult(result, code); })
         .catch(function(err) { setStatus('Lookup error: ' + err, 'error'); });
     }
 
@@ -467,7 +529,6 @@
     // ============================================================
     function confirmScan() {
       if (!currentProduct) return;
-
       var scanData = {
         action:    'logScan',
         ean13:     currentProduct.ean13,
@@ -485,24 +546,22 @@
       btn.textContent = 'Saving...';
       btn.disabled = true;
 
-      apiPost(scanData)
-        .then(function(result) {
-          btn.textContent = 'Add to Sheet';
-          btn.disabled = false;
-          if (result.success) {
-            addToLog(scanData);
-            showToast('Added to sheet');
-            hideCards();
-            resetForNextScan();
-          } else {
-            showToast('Error: ' + result.error, true);
-          }
-        })
-        .catch(function(err) {
-          btn.textContent = 'Add to Sheet';
-          btn.disabled = false;
-          showToast('Failed: ' + err, true);
-        });
+      apiPost(scanData).then(function(result) {
+        btn.textContent = 'Add to Sheet';
+        btn.disabled = false;
+        if (result.success) {
+          addToLog(scanData);
+          showToast('Added to sheet');
+          hideCards();
+          resetForNextScan();
+        } else {
+          showToast('Error: ' + result.error, true);
+        }
+      }).catch(function(err) {
+        btn.textContent = 'Add to Sheet';
+        btn.disabled = false;
+        showToast('Failed: ' + err, true);
+      });
     }
 
     function discardScan() {
@@ -588,12 +647,20 @@
       }).join('');
     }
 
-    function clearLog() { sessionLog = []; document.getElementById('totalScans').textContent = 0; renderLog(); }
+    function clearLog() {
+      sessionLog = [];
+      document.getElementById('totalScans').textContent = 0;
+      renderLog();
+    }
 
     // ============================================================
     // HELPERS
     // ============================================================
-    function resetForNextScan() { currentProduct = null; pendingBarcode = null; setStatus('Ready — tap Start to scan again'); }
+    function resetForNextScan() {
+      currentProduct = null;
+      pendingBarcode = null;
+      setStatus('Ready — tap Start to scan again');
+    }
 
     function setStatus(msg, type) {
       var el = document.getElementById('statusBar');
